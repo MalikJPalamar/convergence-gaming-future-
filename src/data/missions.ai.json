@@ -1,0 +1,303 @@
+{
+  "missions": [
+    {
+      "id": "mission_agent_layer",
+      "title": "The Agent Layer",
+      "briefing": "Autonomous agents are quietly moving from chat windows into procurement systems, calendars, and capital markets. The next platform shift will not be an app you open, but a workforce you negotiate with.",
+      "coreQuestion": "Who governs an economy where most decisions are made by software acting on behalf of humans?",
+      "aiDomain": "ai_agents",
+      "timeHorizons": ["near_1_2_years", "mid_3_5_years", "long_5_10_years"],
+      "requiredForces": ["technology", "economy", "government"],
+      "startingResources": {
+        "attention": 10,
+        "credibility": 5,
+        "capital": 5,
+        "trust": 5,
+        "time": 8
+      },
+      "scenarioAxes": [
+        {
+          "id": "axis_agent_authority",
+          "label": "Agent Authority",
+          "negativePole": "Strict human-in-the-loop",
+          "positivePole": "Agents act with delegated power",
+          "category": "governance"
+        },
+        {
+          "id": "axis_agent_market",
+          "label": "Agent Market Structure",
+          "negativePole": "A few platform monopolies",
+          "positivePole": "Open agent commons",
+          "category": "economy"
+        }
+      ],
+      "winCondition": "Deliver a backcast that aligns one credible agent-governance milestone in each time horizon.",
+      "failureCondition": "Run out of trust before reaching Trend Validation, or commit to a backcast scored below the viable band.",
+      "difficulty": 2,
+      "defaultStakeholders": [
+        "enterprise_buyers",
+        "regulators",
+        "labor_unions",
+        "platform_vendors",
+        "consumer_advocates",
+        "insurance_carriers"
+      ]
+    },
+    {
+      "id": "mission_synthetic_trust_crisis",
+      "title": "The Synthetic Trust Crisis",
+      "briefing": "Generative media has crossed the threshold where ordinary citizens can no longer reliably tell what is real. Institutions that depend on shared evidence are quietly failing.",
+      "coreQuestion": "What replaces the photograph as proof when every frame is plausibly synthetic?",
+      "aiDomain": "synthetic_media",
+      "timeHorizons": ["near_1_2_years", "mid_3_5_years"],
+      "requiredForces": ["media_telecom", "government", "technology"],
+      "startingResources": {
+        "attention": 10,
+        "credibility": 5,
+        "capital": 5,
+        "trust": 5,
+        "time": 8
+      },
+      "scenarioAxes": [
+        {
+          "id": "axis_provenance",
+          "label": "Provenance Infrastructure",
+          "negativePole": "No shared standard",
+          "positivePole": "Universal content credentials",
+          "category": "infrastructure"
+        },
+        {
+          "id": "axis_public_trust",
+          "label": "Public Trust in Media",
+          "negativePole": "Total skepticism",
+          "positivePole": "Restored institutional trust",
+          "category": "society"
+        }
+      ],
+      "winCondition": "Authenticate a trend cluster that survives a red-team pass and ship a backcast with a credible verification milestone in the near horizon.",
+      "failureCondition": "Trust drops below 1, or the backcast leaves the verification gap unaddressed.",
+      "difficulty": 3,
+      "defaultStakeholders": [
+        "newsrooms",
+        "election_officials",
+        "platform_trust_teams",
+        "courts",
+        "fact_checkers",
+        "ordinary_voters"
+      ]
+    },
+    {
+      "id": "mission_work_graph_fractures",
+      "title": "The Work Graph Fractures",
+      "briefing": "AI is not replacing jobs evenly. It is dissolving specific tasks and reshuffling the connective tissue between roles, leaving some careers intact and others hollowed.",
+      "coreQuestion": "What does a stable career path look like when the task graph rewires every eighteen months?",
+      "aiDomain": "ai_labor",
+      "timeHorizons": ["near_1_2_years", "mid_3_5_years", "long_5_10_years"],
+      "requiredForces": ["economy", "education", "wealth_distribution"],
+      "startingResources": {
+        "attention": 10,
+        "credibility": 5,
+        "capital": 5,
+        "trust": 5,
+        "time": 8
+      },
+      "scenarioAxes": [
+        {
+          "id": "axis_skill_half_life",
+          "label": "Skill Half-Life",
+          "negativePole": "Skills obsolete in months",
+          "positivePole": "Durable human craft preserved",
+          "category": "labor"
+        },
+        {
+          "id": "axis_safety_net",
+          "label": "Transition Safety Net",
+          "negativePole": "Workers absorb all the risk",
+          "positivePole": "Shared adjustment infrastructure",
+          "category": "policy"
+        }
+      ],
+      "winCondition": "Commit a backcast that pairs a labor-market signal with a credible policy or training milestone in each horizon.",
+      "failureCondition": "Capital depleted before Trend Validation, or no credible mid-horizon pathway in the backcast.",
+      "difficulty": 3,
+      "defaultStakeholders": [
+        "mid_career_workers",
+        "vocational_schools",
+        "staffing_platforms",
+        "labor_economists",
+        "city_governments",
+        "employers"
+      ]
+    },
+    {
+      "id": "mission_model_commons",
+      "title": "The Model Commons",
+      "briefing": "Open-weight models keep closing the gap with frontier labs. The question is no longer whether capable AI will be widely available, but who maintains the shared substrate.",
+      "coreQuestion": "Can the public benefits of open models be sustained without a tragedy of the commons?",
+      "aiDomain": "open_source_ai",
+      "timeHorizons": ["mid_3_5_years", "long_5_10_years"],
+      "requiredForces": ["technology", "infrastructure", "geopolitics"],
+      "startingResources": {
+        "attention": 10,
+        "credibility": 5,
+        "capital": 5,
+        "trust": 5,
+        "time": 8
+      },
+      "scenarioAxes": [
+        {
+          "id": "axis_model_access",
+          "label": "Model Access",
+          "negativePole": "Locked behind a few labs",
+          "positivePole": "Globally open and forkable",
+          "category": "technology"
+        },
+        {
+          "id": "axis_safety_layer",
+          "label": "Safety Layer",
+          "negativePole": "No shared evals or norms",
+          "positivePole": "Trusted public evaluation commons",
+          "category": "governance"
+        }
+      ],
+      "winCondition": "Authenticate a trend showing a viable steward for the open model commons and lock it into the backcast.",
+      "failureCondition": "Commit a backcast that ignores either misuse risk or lab capture.",
+      "difficulty": 4,
+      "defaultStakeholders": [
+        "open_source_maintainers",
+        "frontier_labs",
+        "national_security",
+        "academic_researchers",
+        "cloud_providers"
+      ]
+    },
+    {
+      "id": "mission_algorithmic_state",
+      "title": "The Algorithmic State",
+      "briefing": "Permits, benefits, sentencing, and tax audits are increasingly mediated by models. Citizens experience the state as a stack of probabilistic decisions they cannot appeal.",
+      "coreQuestion": "What does due process mean when the decision-maker is a model that no one can fully explain?",
+      "aiDomain": "ai_governance",
+      "timeHorizons": ["near_1_2_years", "mid_3_5_years", "long_5_10_years"],
+      "requiredForces": ["government", "technology", "media_telecom"],
+      "startingResources": {
+        "attention": 10,
+        "credibility": 5,
+        "capital": 5,
+        "trust": 5,
+        "time": 8
+      },
+      "scenarioAxes": [
+        {
+          "id": "axis_algorithmic_due_process",
+          "label": "Algorithmic Due Process",
+          "negativePole": "Black-box decisions stand",
+          "positivePole": "Right to a human review",
+          "category": "governance"
+        },
+        {
+          "id": "axis_public_capacity",
+          "label": "Public-Sector AI Capacity",
+          "negativePole": "Vendor lock-in",
+          "positivePole": "Sovereign public AI capability",
+          "category": "state"
+        }
+      ],
+      "winCondition": "Ship a backcast with at least one accountability milestone tied to a validated trend.",
+      "failureCondition": "Credibility falls below 1, or the backcast contains no enforceable oversight step.",
+      "difficulty": 4,
+      "defaultStakeholders": [
+        "civil_servants",
+        "civil_rights_groups",
+        "legislators",
+        "vendor_consortia",
+        "auditors_general",
+        "affected_citizens"
+      ]
+    },
+    {
+      "id": "mission_cognitive_supply_chain",
+      "title": "The Cognitive Supply Chain",
+      "briefing": "Frontier AI runs on a fragile stack of chips, energy, water, and rare earths concentrated in a handful of regions. A single chokepoint can stall a continent.",
+      "coreQuestion": "How do nations and firms hedge when their cognition is rented from someone else's grid?",
+      "aiDomain": "ai_infrastructure",
+      "timeHorizons": ["near_1_2_years", "mid_3_5_years", "long_5_10_years"],
+      "requiredForces": ["geopolitics", "infrastructure", "environment"],
+      "startingResources": {
+        "attention": 10,
+        "credibility": 5,
+        "capital": 5,
+        "trust": 5,
+        "time": 8
+      },
+      "scenarioAxes": [
+        {
+          "id": "axis_compute_sovereignty",
+          "label": "Compute Sovereignty",
+          "negativePole": "One bloc controls the stack",
+          "positivePole": "Distributed regional capacity",
+          "category": "geopolitics"
+        },
+        {
+          "id": "axis_energy_footprint",
+          "label": "Energy Footprint",
+          "negativePole": "Runaway emissions",
+          "positivePole": "Clean and elastic compute",
+          "category": "environment"
+        }
+      ],
+      "winCondition": "Deliver a backcast that aligns supply-chain hedges with at least one validated trend per horizon.",
+      "failureCondition": "Capital and time both depleted before Trend Validation.",
+      "difficulty": 4,
+      "defaultStakeholders": [
+        "chip_foundries",
+        "grid_operators",
+        "national_treasuries",
+        "hyperscalers",
+        "mining_communities"
+      ]
+    },
+    {
+      "id": "mission_mirror_war",
+      "title": "The Mirror War",
+      "briefing": "Personalized AI companions, persuasion engines, and synthetic peers are quietly reshaping what people believe about themselves. The contest for cognition is intimate, not public.",
+      "coreQuestion": "What rights do humans need when their inner narrator can be optimized by someone else?",
+      "aiDomain": "ai_persuasion",
+      "timeHorizons": ["mid_3_5_years", "long_5_10_years", "far_10_plus_years"],
+      "requiredForces": ["media_telecom", "public_health", "technology"],
+      "startingResources": {
+        "attention": 10,
+        "credibility": 5,
+        "capital": 5,
+        "trust": 5,
+        "time": 8
+      },
+      "scenarioAxes": [
+        {
+          "id": "axis_cognitive_liberty",
+          "label": "Cognitive Liberty",
+          "negativePole": "Persuasion is unregulated",
+          "positivePole": "Mental privacy as a right",
+          "category": "rights"
+        },
+        {
+          "id": "axis_companion_norms",
+          "label": "AI Companion Norms",
+          "negativePole": "Engagement at any cost",
+          "positivePole": "Wellbeing-aligned design",
+          "category": "society"
+        }
+      ],
+      "winCondition": "Authenticate a trend connecting persuasive AI to a measurable wellbeing outcome and commit a backcast that protects mental autonomy.",
+      "failureCondition": "Trust collapses to 0, or the backcast is rated below the viable band.",
+      "difficulty": 5,
+      "defaultStakeholders": [
+        "teenagers",
+        "therapists",
+        "platform_designers",
+        "regulators",
+        "neuroethicists",
+        "parents"
+      ]
+    }
+  ]
+}

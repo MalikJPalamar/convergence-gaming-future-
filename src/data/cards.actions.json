@@ -1,0 +1,62 @@
+[
+  {
+    "id": "act_001",
+    "title": "Commission a rapid landscape scan",
+    "description": "Spend attention to surface a fresh draft of weak signals from the field.",
+    "category": "build_capability",
+    "cost": { "attention": 2 },
+    "effects": { "time": -1 },
+    "tags": ["scan", "intel"],
+    "unlockTier": 1
+  },
+  {
+    "id": "act_002",
+    "title": "Run a red-team workshop",
+    "description": "Stress-test current trend candidates against adversarial framings.",
+    "category": "red_team",
+    "cost": { "credibility": 1, "time": 1 },
+    "effects": { "trust": 1 },
+    "tags": ["risk", "validation"],
+    "unlockTier": 1
+  },
+  {
+    "id": "act_003",
+    "title": "Brief a coalition partner",
+    "description": "Trade capital for a stakeholder ally who lifts authentication scores.",
+    "category": "form_partnership",
+    "cost": { "capital": 2 },
+    "effects": { "credibility": 1, "trust": 1 },
+    "tags": ["coalition", "stakeholder"],
+    "unlockTier": 1
+  },
+  {
+    "id": "act_004",
+    "title": "Publish a framing memo",
+    "description": "Convert credibility into public attention for the run's core question.",
+    "category": "educate_public",
+    "cost": { "credibility": 1 },
+    "effects": { "attention": 2 },
+    "tags": ["narrative", "outreach"],
+    "unlockTier": 1
+  },
+  {
+    "id": "act_005",
+    "title": "Stand up a contained pilot",
+    "description": "Burn capital and time to validate a candidate trend in the field.",
+    "category": "launch_pilot",
+    "cost": { "capital": 2, "time": 1 },
+    "effects": { "credibility": 2 },
+    "tags": ["pilot", "evidence"],
+    "unlockTier": 1
+  },
+  {
+    "id": "act_006",
+    "title": "Draft a regulatory proposal",
+    "description": "Spend trust to lock in a governance lever you can reference in the backcast.",
+    "category": "regulate",
+    "cost": { "trust": 1, "time": 1 },
+    "effects": { "credibility": 1 },
+    "tags": ["policy", "lever"],
+    "unlockTier": 1
+  }
+]
