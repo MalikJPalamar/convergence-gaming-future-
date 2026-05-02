@@ -90,6 +90,105 @@ describe("exportSave / importSave", () => {
     });
     expect(() => importSave(bad)).toThrowError("Invalid save payload");
   });
+
+  it("rejects malformed archive entries", () => {
+    const base = makeSave();
+    const bad = JSON.stringify({
+      ...base,
+      meta: {
+        ...base.meta,
+        archive: [{ id: "a1" /* missing missionId/score/etc. */ }],
+      },
+    });
+    expect(() => importSave(bad)).toThrowError("Invalid save payload");
+  });
+
+  it("rejects null settings", () => {
+    const base = makeSave();
+    const bad = JSON.stringify({ ...base, settings: null });
+    expect(() => importSave(bad)).toThrowError("Invalid save payload");
+  });
+
+  it("rejects missing settings", () => {
+    const base = makeSave();
+    const { settings: _settings, ...rest } = base;
+    const bad = JSON.stringify(rest);
+    expect(() => importSave(bad)).toThrowError("Invalid save payload");
+  });
+
+  it("rejects empty-object lastRun", () => {
+    const base = makeSave();
+    const bad = JSON.stringify({ ...base, lastRun: {} });
+    expect(() => importSave(bad)).toThrowError("Invalid save payload");
+  });
+
+  it("rejects array lastRun", () => {
+    const base = makeSave();
+    const bad = JSON.stringify({ ...base, lastRun: [] });
+    expect(() => importSave(bad)).toThrowError("Invalid save payload");
+  });
+
+  it("rejects lastRun with unknown stage", () => {
+    const base = makeSave();
+    const bad = JSON.stringify({
+      ...base,
+      lastRun: {
+        seed: "s",
+        missionId: "m_agents",
+        stage: "NOT_A_STAGE",
+        timeHorizon: null,
+        priorityStakeholders: [],
+        resources: {
+          attention: 10,
+          credibility: 5,
+          capital: 5,
+          trust: 5,
+          time: 10,
+        },
+        deck: [],
+        drawn: [],
+        selected: [],
+        trendCandidates: [],
+        scenarios: [],
+        preferredScenarioId: null,
+        backcastItems: [],
+        finalScore: null,
+        log: [],
+      },
+    });
+    expect(() => importSave(bad)).toThrowError("Invalid save payload");
+  });
+
+  it("accepts a well-formed lastRun", () => {
+    const base = makeSave();
+    const ok = JSON.stringify({
+      ...base,
+      lastRun: {
+        seed: "s",
+        missionId: "m_agents",
+        stage: "MISSION_BRIEF",
+        timeHorizon: null,
+        priorityStakeholders: [],
+        resources: {
+          attention: 10,
+          credibility: 5,
+          capital: 5,
+          trust: 5,
+          time: 10,
+        },
+        deck: [],
+        drawn: [],
+        selected: [],
+        trendCandidates: [],
+        scenarios: [],
+        preferredScenarioId: null,
+        backcastItems: [],
+        finalScore: null,
+        log: [],
+      },
+    });
+    expect(() => importSave(ok)).not.toThrow();
+  });
 });
 
 describe("defaultSave", () => {
