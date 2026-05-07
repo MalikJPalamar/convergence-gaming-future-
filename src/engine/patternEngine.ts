@@ -1,21 +1,64 @@
-import type { RunState, PatternCluster } from "../types/game";
+import type { PatternCluster, RunState } from "../types/game";
 import type { TrendCandidate } from "../types/scoring";
-import type { SignalCard, PatternTag } from "../types/cards";
+import type { SignalCard, PatternTag, HumanNeed, MacroForce } from "../types/cards";
+import { advanceStage } from "./runEngine";
+import { createRng } from "./rng";
 
-export const PATTERN_MIN_CARDS_PER_CLUSTER = 3;
-export const PATTERN_MIN_TAGS_PER_CLUSTER = 2;
-export const PATTERN_MAX_CLUSTERS = 3;
+export const MIN_CLUSTER_SIZE = 3;
+export const MAX_CLUSTERS = 3;
+export const MIN_DISTINCT_TAGS = 2;
 
-export function newClusterId(seed: string, index: number): string {
-  return `cluster_${seed.slice(0, 8)}_${index}`;
-}
+// --- Back-compat constants (callers may still reference these names).
+export const PATTERN_MIN_CARDS_PER_CLUSTER = MIN_CLUSTER_SIZE;
+export const PATTERN_MIN_TAGS_PER_CLUSTER = MIN_DISTINCT_TAGS;
+export const PATTERN_MAX_CLUSTERS = MAX_CLUSTERS;
 
-export function addCluster(run: RunState): RunState {
-  if (run.clusters.length >= PATTERN_MAX_CLUSTERS) {
-    throw new Error("Maximum 3 clusters");
+/**
+ * Default deterministic id generator derived from the run seed and the
+ * current cluster count. Each successive call within the same run is unique
+ * because the seed varies with `run.clusters.length` at call time.
+ */
+const defaultIdGen = (run: RunState): (() => string) => {
+  const rng = createRng(`${run.seed}::cluster::${run.clusters.length}`);
+  return () => "cl_" + Math.floor(rng.next() * 0xffffffff).toString(36);
+};
+
+/** Build a {id → card} index from `run.selected` — the cluster's source set. */
+const indexSelected = (run: RunState): Record<string, SignalCard> =>
+  Object.fromEntries(run.selected.map((c) => [c.id, c]));
+
+const tagsForCluster = (
+  cluster: PatternCluster,
+  signalsById: Record<string, SignalCard>,
+): PatternTag[] => {
+  const set = new Set<PatternTag>();
+  for (const id of cluster.signalIds) {
+    const card = signalsById[id];
+    if (!card) continue;
+    for (const t of card.patternTags) set.add(t);
   }
-  const id = newClusterId(run.seed, run.clusters.length);
-  const cluster: PatternCluster = { id, signalIds: [], proposedTitle: "" };
+  return [...set];
+};
+
+const cardsForCluster = (
+  cluster: PatternCluster,
+  signalsById: Record<string, SignalCard>,
+): SignalCard[] =>
+  cluster.signalIds
+    .map((id) => signalsById[id])
+    .filter((c): c is SignalCard => Boolean(c));
+
+export function addCluster(
+  run: RunState,
+  idGen: () => string = defaultIdGen(run),
+): RunState {
+  if (run.clusters.length >= MAX_CLUSTERS) return run;
+  const idx = run.clusters.length + 1;
+  const cluster: PatternCluster = {
+    id: idGen(),
+    signalIds: [],
+    proposedTitle: `Cluster ${idx}`,
+  };
   return { ...run, clusters: [...run.clusters, cluster] };
 }
 
@@ -30,13 +73,8 @@ export function addSignalToCluster(
   clusterId: string,
   signalId: string,
 ): RunState {
-  if (!run.selected.some((c) => c.id === signalId)) {
-    throw new Error(`Signal not in selected pool: ${signalId}`);
-  }
-  if (!run.clusters.some((c) => c.id === clusterId)) {
-    throw new Error(`Unknown cluster: ${clusterId}`);
-  }
-  // Remove signal from any other cluster it currently lives in, then add.
+  if (!run.selected.some((c) => c.id === signalId)) return run;
+  if (!run.clusters.some((c) => c.id === clusterId)) return run;
   const clusters = run.clusters.map((c) => {
     if (c.id === clusterId) {
       const without = c.signalIds.filter((s) => s !== signalId);
@@ -60,7 +98,7 @@ export function removeSignalFromCluster(
   return { ...run, clusters };
 }
 
-export function setClusterTitle(
+export function renameCluster(
   run: RunState,
   clusterId: string,
   title: string,
@@ -71,83 +109,126 @@ export function setClusterTitle(
   return { ...run, clusters };
 }
 
-export interface ClusterValidationIssue {
+/** Back-compat alias for the older store. Prefer `renameCluster`. */
+export const setClusterTitle = renameCluster;
+
+export interface ClusterValidation {
   clusterId: string;
-  reason: "too_few_cards" | "too_few_tags";
+  size: number;
+  distinctTags: number;
+  ok: boolean;
+  reasons: string[];
 }
 
-const tagsForCluster = (
-  cluster: PatternCluster,
-  signalsById: Record<string, SignalCard>,
-): PatternTag[] => {
-  const set = new Set<PatternTag>();
-  for (const id of cluster.signalIds) {
-    const card = signalsById[id];
-    if (!card) continue;
-    for (const t of card.patternTags) set.add(t);
-  }
-  return [...set];
-};
-
-export function validateClusters(run: RunState): ClusterValidationIssue[] {
-  const signalsById: Record<string, SignalCard> = Object.fromEntries(
-    run.selected.map((c) => [c.id, c]),
-  );
-  const issues: ClusterValidationIssue[] = [];
-  for (const c of run.clusters) {
-    if (c.signalIds.length < PATTERN_MIN_CARDS_PER_CLUSTER) {
-      issues.push({ clusterId: c.id, reason: "too_few_cards" });
-      continue;
+export function validateClusters(run: RunState): ClusterValidation[] {
+  const signalsById = indexSelected(run);
+  return run.clusters.map((c) => {
+    const size = c.signalIds.length;
+    const distinctTags = tagsForCluster(c, signalsById).length;
+    const reasons: string[] = [];
+    if (size < MIN_CLUSTER_SIZE) {
+      reasons.push(`needs at least ${MIN_CLUSTER_SIZE} cards (has ${size})`);
     }
-    const tags = tagsForCluster(c, signalsById);
-    if (tags.length < PATTERN_MIN_TAGS_PER_CLUSTER) {
-      issues.push({ clusterId: c.id, reason: "too_few_tags" });
+    if (distinctTags < MIN_DISTINCT_TAGS) {
+      reasons.push(
+        `needs at least ${MIN_DISTINCT_TAGS} distinct pattern tags (has ${distinctTags})`,
+      );
     }
-  }
-  return issues;
-}
-
-export function generateTrendCandidates(
-  run: RunState,
-  signalsById: Record<string, SignalCard>,
-): TrendCandidate[] {
-  return run.clusters.map((cluster) => {
-    const tags = tagsForCluster(cluster, signalsById).slice().sort();
-    const firstCard =
-      cluster.signalIds.length > 0
-        ? signalsById[cluster.signalIds[0]!]
-        : undefined;
-    const synthetic =
-      "Trend: " + (firstCard ? firstCard.title.slice(0, 60) : "Untitled");
-    const title =
-      cluster.proposedTitle.trim().length > 0
-        ? cluster.proposedTitle
-        : synthetic;
     return {
-      id: `trend_${cluster.id}`,
-      title,
-      signalIds: [...cluster.signalIds],
-      patternTags: tags,
-      humanNeedScore: 0,
-      persistenceScore: 0,
-      convergenceScore: 0,
-      evolutionScore: 0,
-      validityScore: 0,
-      isValidated: false,
+      clusterId: c.id,
+      size,
+      distinctTags,
+      ok: reasons.length === 0,
+      reasons,
     };
   });
 }
 
-export function commitPatternBoard(
+const clamp03 = (n: number): number => Math.max(0, Math.min(3, Math.round(n)));
+
+const avg = (xs: readonly number[]): number =>
+  xs.length === 0 ? 0 : xs.reduce((a, b) => a + b, 0) / xs.length;
+
+/**
+ * Build a TrendCandidate from a cluster.
+ *
+ * Score formulas (deterministic, all 0..3):
+ *  - humanNeedScore  = min(3, distinct human needs across cluster members)
+ *  - persistenceScore = clamp03(avg(evidence in 1..5) * 3 / 5)
+ *      → maps a 1..5 evidence avg roughly into 0..3.
+ *  - convergenceScore = clamp03(avg(novelty) * 3 / 5 * (size >= 4 ? 1 : 0.7))
+ *      → reflects "more cards reinforce convergence".
+ *  - evolutionScore  = min(3, distinct primaryForce values across cluster)
+ *  - validityScore   = sum of the four (0..12)
+ *  - isValidated     = validityScore >= 7
+ */
+export function buildTrendCandidate(
+  cluster: PatternCluster,
   run: RunState,
-  signalsById: Record<string, SignalCard>,
-): RunState {
+): TrendCandidate {
+  const signalsById = indexSelected(run);
+  const cards = cardsForCluster(cluster, signalsById);
+  const tags = tagsForCluster(cluster, signalsById);
+
+  const needs = new Set<HumanNeed>();
+  for (const c of cards) for (const n of c.humanNeeds) needs.add(n);
+  const forces = new Set<MacroForce>();
+  for (const c of cards) forces.add(c.primaryForce);
+
+  const humanNeedScore = Math.min(3, needs.size);
+  const persistenceScore = clamp03((avg(cards.map((c) => c.evidence)) * 3) / 5);
+  const sizeWeight = cards.length >= 4 ? 1 : 0.7;
+  const convergenceScore = clamp03(
+    (avg(cards.map((c) => c.novelty)) * 3 * sizeWeight) / 5,
+  );
+  const evolutionScore = Math.min(3, forces.size);
+
+  const validityScore =
+    humanNeedScore + persistenceScore + convergenceScore + evolutionScore;
+
+  return {
+    id: `trend_${cluster.id}`,
+    title: cluster.proposedTitle,
+    signalIds: [...cluster.signalIds],
+    patternTags: tags,
+    humanNeedScore,
+    persistenceScore,
+    convergenceScore,
+    evolutionScore,
+    validityScore,
+    isValidated: validityScore >= 7,
+  };
+}
+
+/**
+ * Validate every cluster, build TrendCandidates, advance stage to TREND_VALIDATION.
+ * Throws if there are no clusters or any cluster fails validation; state unchanged.
+ */
+export function commitPatternBoard(run: RunState): RunState {
   if (run.clusters.length === 0) {
-    throw new Error("At least one cluster required");
+    throw new Error("Pattern Board requires at least one cluster");
   }
-  const issues = validateClusters(run);
-  if (issues.length > 0) {
-    throw new Error("Cluster validation failed");
+  const results = validateClusters(run);
+  const failing = results.filter((r) => !r.ok);
+  if (failing.length > 0) {
+    const first = failing[0]!;
+    throw new Error(
+      `Cluster ${first.clusterId} invalid: ${first.reasons.join("; ")}`,
+    );
   }
-  return { ...run, trendCandidates: generateTrendCandidates(run, signalsById) };
+  const trendCandidates = run.clusters.map((c) => buildTrendCandidate(c, run));
+  const withTrends: RunState = { ...run, trendCandidates };
+  return advanceStage(withTrends);
+}
+
+/**
+ * Back-compat helper used by older store wiring. Kept for safety; prefer
+ * `commitPatternBoard(run)` which derives signals from `run.selected`.
+ */
+export function generateTrendCandidates(
+  run: RunState,
+  _signalsById?: Record<string, SignalCard>,
+): TrendCandidate[] {
+  void _signalsById;
+  return run.clusters.map((c) => buildTrendCandidate(c, run));
 }
