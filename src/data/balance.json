@@ -1,0 +1,51 @@
+{
+  "startingResources": {
+    "attention": 10,
+    "credibility": 5,
+    "capital": 5,
+    "trust": 5,
+    "time": 8
+  },
+  "signalDraft": {
+    "handSize": 5,
+    "deckSize": 30,
+    "draftsPerTurn": 3,
+    "rerollCost": { "attention": 1 },
+    "keepCost": { "attention": 1 },
+    "discardRefund": { "time": 1 }
+  },
+  "patternBoard": {
+    "minClusterSize": 3,
+    "maxClusters": 6,
+    "tagBonus": {
+      "clash": 2,
+      "turn": 2,
+      "practice": 1,
+      "hack": 2,
+      "edge": 3,
+      "outlier": 3
+    },
+    "forceAlignmentBonus": 2,
+    "humanNeedAlignmentBonus": 1
+  },
+  "trendValidation": {
+    "evidenceWeight": 1.0,
+    "noveltyWeight": 0.8,
+    "uncertaintyPenalty": 0.5,
+    "impactWeight": 1.2,
+    "velocityWeight": 1.0,
+    "passingScore": 12,
+    "stakeholderBonusPerMatch": 1
+  },
+  "backcast": {
+    "milestones": 4,
+    "horizonSplit": [0.25, 0.5, 0.75, 1.0],
+    "scoreBands": {
+      "weak": 0,
+      "viable": 10,
+      "strong": 18,
+      "decisive": 26
+    },
+    "futureReadinessMax": 100
+  }
+}
