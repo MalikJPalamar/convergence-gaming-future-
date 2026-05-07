@@ -19,9 +19,52 @@ Future Readiness Score and meta-progression rewards. Local-first, no backend.
 - Vitest (tests)
 - localStorage (persistence)
 
-## Current scope: Milestones 1 + 2 only
+## Current scope: Milestone 3 (Signal Draft + Pattern Board)
 
-Per the originating spec section 25, the first build target is M1 + M2:
+Building on the foundation merged in PR #1.
+
+### What lands
+
+1. **Signal Draft** screen + engine (`engine/draftEngine.ts` + tests)
+   - `startSignalDraft(run)` moves the first 12 cards from `deck` to `drawn`.
+   - `pickSignal(run, signalId, mission)` moves card from `drawn` → `selected`,
+     deducts 1 attention. **Discount:** the first 3 picks whose `aiDomain`
+     matches `mission.aiDomain` cost 0 attention. **Bonus:** if the picked
+     card's `primaryForce` is in `mission.requiredForces`, +1 credibility.
+   - `unpickSignal(run, signalId, mission)` reverses the above (refund + bonus
+     reversal).
+   - `commitSignalDraft(run)` validates `5 ≤ selected ≤ 7` and advances stage.
+2. **Pattern Board** screen + engine (`engine/patternEngine.ts` + tests)
+   - Player drags cards from a holding row into 1–3 named clusters.
+   - Each cluster requires `≥ 3 signals` and `≥ 2 distinct pattern tags`
+     across its members.
+   - `commitPatternBoard(run)` builds one `TrendCandidate` per cluster
+     (signalIds + pattern-tag union + auto-title) and advances stage.
+3. **Type extension**
+   - New `PatternCluster { id; signalIds; proposedTitle }`.
+   - `RunState.clusters: PatternCluster[]` (default `[]`).
+4. **Store wiring** for the actions above.
+5. **CI**: `.github/workflows/ci.yml` runs `tsc -b`, tests, build on push/PR.
+
+### Out of scope (later milestones)
+
+Trend Validation scoring UI (M4), Velocity Matrix (M5), Scenario Forge (M6),
+Backcast (M7), Run Outcome (M8), full 110-card deck (M9), polish (M10).
+
+### Acceptance — this PR
+
+- All M1+M2 acceptance still passes.
+- `npm run test` ≥ 50 tests; new files: `draftEngine.test.ts`,
+  `patternEngine.test.ts`. Engine tests are TDD-first.
+- `npm run build` clean.
+- CI workflow runs on this PR and is green.
+- App boots; user can do: pick mission → brief → draft (12 → 5–7) →
+  pattern board (1–3 clusters) → reach Trend Validation stub.
+- Signal Draft enforces attention math and the domain discount.
+- Pattern Board enforces the ≥3 cards / ≥2 tags rules and generates
+  trend candidates.
+
+### Note: M1+M2 (already merged in PR #1)
 
 1. Scaffold Vite/React/TS app with the prescribed repo structure.
 2. Tailwind, ESLint, Vitest configured.

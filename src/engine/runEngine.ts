@@ -49,6 +49,8 @@ export function createRun(input: CreateRunInput): RunState {
     deck,
     drawn: [],
     selected: [],
+    domainDiscountUsed: 0,
+    clusters: [],
     trendCandidates: [],
     scenarios: [],
     preferredScenarioId: null,

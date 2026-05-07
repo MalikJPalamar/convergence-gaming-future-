@@ -16,6 +16,20 @@ import {
   importSave,
   defaultSave,
 } from "../engine/saveEngine";
+import {
+  startSignalDraft,
+  pickSignal,
+  unpickSignal,
+  commitSignalDraft,
+} from "../engine/draftEngine";
+import {
+  addCluster,
+  removeCluster,
+  addSignalToCluster,
+  removeSignalFromCluster,
+  setClusterTitle,
+  commitPatternBoard,
+} from "../engine/patternEngine";
 import missionsBundle from "../data/missions.ai.json";
 import signalPoolJson from "../data/cards.ai.signals.json";
 import balance from "../data/balance.json";
@@ -48,6 +62,20 @@ interface GameStore {
   resetSave: () => void;
   importSaveString: (s: string) => void;
   exportSaveString: () => string;
+
+  // Signal Draft
+  draftStart: () => void;
+  draftPick: (signalId: string) => void;
+  draftUnpick: (signalId: string) => void;
+  draftCommit: () => void;
+
+  // Pattern Board
+  patternAddCluster: () => void;
+  patternRemoveCluster: (clusterId: string) => void;
+  patternAddSignal: (clusterId: string, signalId: string) => void;
+  patternRemoveSignal: (clusterId: string, signalId: string) => void;
+  patternSetTitle: (clusterId: string, title: string) => void;
+  patternCommit: () => void;
 }
 
 const generateSeed = (): string => {
@@ -184,6 +212,128 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lastRun: state.lastRun,
       settings: state.settings,
     });
+  },
+
+  draftStart: () => {
+    set((state) => {
+      if (!state.lastRun) return {};
+      const nextRun = startSignalDraft(state.lastRun);
+      return { lastRun: nextRun };
+    });
+    persist(get());
+  },
+
+  draftPick: (signalId) => {
+    set((state) => {
+      if (!state.lastRun) return {};
+      const mission = missions.find((m) => m.id === state.lastRun!.missionId);
+      if (!mission) return {};
+      try {
+        const nextRun = pickSignal(state.lastRun, signalId, mission);
+        return { lastRun: nextRun };
+      } catch (err) {
+        console.warn("draftPick failed:", err);
+        return {};
+      }
+    });
+    persist(get());
+  },
+
+  draftUnpick: (signalId) => {
+    set((state) => {
+      if (!state.lastRun) return {};
+      const mission = missions.find((m) => m.id === state.lastRun!.missionId);
+      if (!mission) return {};
+      try {
+        const nextRun = unpickSignal(state.lastRun, signalId, mission);
+        return { lastRun: nextRun };
+      } catch (err) {
+        console.warn("draftUnpick failed:", err);
+        return {};
+      }
+    });
+    persist(get());
+  },
+
+  draftCommit: () => {
+    const state = get();
+    if (!state.lastRun) return;
+    try {
+      const validated = commitSignalDraft(state.lastRun);
+      const advanced = advanceStage(validated);
+      set({ lastRun: advanced, stage: advanced.stage });
+      persist(get());
+    } catch (err) {
+      console.warn("draftCommit failed:", err);
+    }
+  },
+
+  patternAddCluster: () => {
+    set((state) => {
+      if (!state.lastRun) return {};
+      try {
+        return { lastRun: addCluster(state.lastRun) };
+      } catch (err) {
+        console.warn("patternAddCluster failed:", err);
+        return {};
+      }
+    });
+    persist(get());
+  },
+
+  patternRemoveCluster: (clusterId) => {
+    set((state) => {
+      if (!state.lastRun) return {};
+      return { lastRun: removeCluster(state.lastRun, clusterId) };
+    });
+    persist(get());
+  },
+
+  patternAddSignal: (clusterId, signalId) => {
+    set((state) => {
+      if (!state.lastRun) return {};
+      try {
+        return { lastRun: addSignalToCluster(state.lastRun, clusterId, signalId) };
+      } catch (err) {
+        console.warn("patternAddSignal failed:", err);
+        return {};
+      }
+    });
+    persist(get());
+  },
+
+  patternRemoveSignal: (clusterId, signalId) => {
+    set((state) => {
+      if (!state.lastRun) return {};
+      return {
+        lastRun: removeSignalFromCluster(state.lastRun, clusterId, signalId),
+      };
+    });
+    persist(get());
+  },
+
+  patternSetTitle: (clusterId, title) => {
+    set((state) => {
+      if (!state.lastRun) return {};
+      return { lastRun: setClusterTitle(state.lastRun, clusterId, title) };
+    });
+    persist(get());
+  },
+
+  patternCommit: () => {
+    const state = get();
+    if (!state.lastRun) return;
+    try {
+      const signalsById: Record<string, SignalCard> = Object.fromEntries(
+        state.lastRun.selected.map((c) => [c.id, c]),
+      );
+      const committed = commitPatternBoard(state.lastRun, signalsById);
+      const advanced = advanceStage(committed);
+      set({ lastRun: advanced, stage: advanced.stage });
+      persist(get());
+    } catch (err) {
+      console.warn("patternCommit failed:", err);
+    }
   },
 }));
 
