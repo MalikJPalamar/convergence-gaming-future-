@@ -20,6 +20,12 @@ export type RunStage =
   | "RUN_OUTCOME"
   | "ARCHIVE";
 
+export interface PatternCluster {
+  id: string;
+  signalIds: string[];
+  proposedTitle: string;
+}
+
 export interface RunState {
   /** stable seed string used to initialise the run RNG */
   seed: string;
@@ -34,6 +40,10 @@ export interface RunState {
   drawn: SignalCard[];
   /** cards picked by the player */
   selected: SignalCard[];
+  /** count of mission-domain picks that received the attention discount */
+  domainDiscountUsed: number;
+  /** Pattern Board: clusters of selected signals, generated trends in commit */
+  clusters: PatternCluster[];
   trendCandidates: TrendCandidate[];
   scenarios: Scenario[];
   preferredScenarioId: string | null;

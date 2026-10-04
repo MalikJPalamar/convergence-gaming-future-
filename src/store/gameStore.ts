@@ -16,6 +16,20 @@ import {
   importSave,
   defaultSave,
 } from "../engine/saveEngine";
+import {
+  startSignalDraft,
+  pickSignal,
+  unpickSignal,
+  commitSignalDraft,
+} from "../engine/draftEngine";
+import {
+  addCluster,
+  removeCluster,
+  addSignalToCluster,
+  removeSignalFromCluster,
+  renameCluster,
+  commitPatternBoard,
+} from "../engine/patternEngine";
 import missionsBundle from "../data/missions.ai.json";
 import signalPoolJson from "../data/cards.ai.signals.json";
 import balance from "../data/balance.json";
@@ -48,6 +62,32 @@ interface GameStore {
   resetSave: () => void;
   importSaveString: (s: string) => void;
   exportSaveString: () => string;
+
+  // Signal Draft (canonical names)
+  startSignalDraft: () => void;
+  pickSignal: (signalId: string) => void;
+  unpickSignal: (signalId: string) => void;
+  commitSignalDraft: () => void;
+  // Signal Draft (back-compat aliases)
+  draftStart: () => void;
+  draftPick: (signalId: string) => void;
+  draftUnpick: (signalId: string) => void;
+  draftCommit: () => void;
+
+  // Pattern Board (canonical names)
+  addCluster: () => void;
+  removeCluster: (clusterId: string) => void;
+  addSignalToCluster: (clusterId: string, signalId: string) => void;
+  removeSignalFromCluster: (clusterId: string, signalId: string) => void;
+  renameCluster: (clusterId: string, title: string) => void;
+  commitPatternBoard: () => void;
+  // Pattern Board (back-compat aliases)
+  patternAddCluster: () => void;
+  patternRemoveCluster: (clusterId: string) => void;
+  patternAddSignal: (clusterId: string, signalId: string) => void;
+  patternRemoveSignal: (clusterId: string, signalId: string) => void;
+  patternSetTitle: (clusterId: string, title: string) => void;
+  patternCommit: () => void;
 }
 
 const generateSeed = (): string => {
@@ -141,7 +181,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
   advance: () => {
     set((state) => {
       if (!state.lastRun) return {};
-      const nextRun = advanceStage(state.lastRun);
+      let nextRun = advanceStage(state.lastRun);
+      // Auto-start the Signal Draft on first entry so the Draft screen has
+      // cards in `drawn`. Idempotent if drawn is already populated.
+      if (nextRun.stage === "SIGNAL_DRAFT" && nextRun.drawn.length === 0) {
+        nextRun = startSignalDraft(nextRun);
+      }
       return { lastRun: nextRun, stage: nextRun.stage };
     });
     persist(get());
@@ -185,6 +230,119 @@ export const useGameStore = create<GameStore>((set, get) => ({
       settings: state.settings,
     });
   },
+
+  startSignalDraft: () => {
+    set((state) => {
+      if (!state.lastRun) return {};
+      const nextRun = startSignalDraft(state.lastRun);
+      return { lastRun: nextRun };
+    });
+    persist(get());
+  },
+
+  pickSignal: (signalId) => {
+    set((state) => {
+      if (!state.lastRun) return {};
+      const mission = missions.find((m) => m.id === state.lastRun!.missionId);
+      if (!mission) return {};
+      const nextRun = pickSignal(state.lastRun, signalId, mission);
+      return nextRun === state.lastRun ? {} : { lastRun: nextRun };
+    });
+    persist(get());
+  },
+
+  unpickSignal: (signalId) => {
+    set((state) => {
+      if (!state.lastRun) return {};
+      const mission = missions.find((m) => m.id === state.lastRun!.missionId);
+      if (!mission) return {};
+      const nextRun = unpickSignal(state.lastRun, signalId, mission);
+      return nextRun === state.lastRun ? {} : { lastRun: nextRun };
+    });
+    persist(get());
+  },
+
+  commitSignalDraft: () => {
+    const state = get();
+    if (!state.lastRun) return;
+    try {
+      // engine.commitSignalDraft already advances stage internally.
+      const advanced = commitSignalDraft(state.lastRun);
+      set({ lastRun: advanced, stage: advanced.stage });
+      persist(get());
+    } catch (err) {
+      console.warn("commitSignalDraft failed:", err);
+    }
+  },
+
+  addCluster: () => {
+    set((state) => {
+      if (!state.lastRun) return {};
+      const nextRun = addCluster(state.lastRun);
+      return nextRun === state.lastRun ? {} : { lastRun: nextRun };
+    });
+    persist(get());
+  },
+
+  removeCluster: (clusterId) => {
+    set((state) => {
+      if (!state.lastRun) return {};
+      return { lastRun: removeCluster(state.lastRun, clusterId) };
+    });
+    persist(get());
+  },
+
+  addSignalToCluster: (clusterId, signalId) => {
+    set((state) => {
+      if (!state.lastRun) return {};
+      return { lastRun: addSignalToCluster(state.lastRun, clusterId, signalId) };
+    });
+    persist(get());
+  },
+
+  removeSignalFromCluster: (clusterId, signalId) => {
+    set((state) => {
+      if (!state.lastRun) return {};
+      return {
+        lastRun: removeSignalFromCluster(state.lastRun, clusterId, signalId),
+      };
+    });
+    persist(get());
+  },
+
+  renameCluster: (clusterId, title) => {
+    set((state) => {
+      if (!state.lastRun) return {};
+      return { lastRun: renameCluster(state.lastRun, clusterId, title) };
+    });
+    persist(get());
+  },
+
+  commitPatternBoard: () => {
+    const state = get();
+    if (!state.lastRun) return;
+    try {
+      // engine.commitPatternBoard advances the stage internally.
+      const advanced = commitPatternBoard(state.lastRun);
+      set({ lastRun: advanced, stage: advanced.stage });
+      persist(get());
+    } catch (err) {
+      console.warn("commitPatternBoard failed:", err);
+    }
+  },
+
+  // --- Back-compat aliases. They delegate to the canonical actions above so
+  // any existing UI wiring keeps working without behavioural change.
+  draftStart: () => get().startSignalDraft(),
+  draftPick: (id) => get().pickSignal(id),
+  draftUnpick: (id) => get().unpickSignal(id),
+  draftCommit: () => get().commitSignalDraft(),
+  patternAddCluster: () => get().addCluster(),
+  patternRemoveCluster: (id) => get().removeCluster(id),
+  patternAddSignal: (cid, sid) => get().addSignalToCluster(cid, sid),
+  patternRemoveSignal: (cid, sid) => get().removeSignalFromCluster(cid, sid),
+  patternSetTitle: (cid, title) => get().renameCluster(cid, title),
+  patternCommit: () => get().commitPatternBoard(),
 }));
 
 export const getMissions = (): Mission[] => missions;

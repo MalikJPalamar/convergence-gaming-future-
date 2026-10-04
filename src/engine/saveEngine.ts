@@ -119,6 +119,8 @@ function isValidLastRun(value: unknown): value is RunState | null {
     Array.isArray(value.deck) &&
     Array.isArray(value.drawn) &&
     Array.isArray(value.selected) &&
+    typeof value.domainDiscountUsed === "number" &&
+    Array.isArray(value.clusters) &&
     Array.isArray(value.trendCandidates) &&
     Array.isArray(value.scenarios) &&
     Array.isArray(value.backcastItems) &&
