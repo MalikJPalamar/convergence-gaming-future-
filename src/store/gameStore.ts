@@ -30,6 +30,12 @@ import {
   renameCluster,
   commitPatternBoard,
 } from "../engine/patternEngine";
+import {
+  setTrendScore as engineSetTrendScore,
+  resetTrendScores as engineResetTrendScores,
+  commitTrendValidation as engineCommitTrendValidation,
+  type TrendScoreField,
+} from "../engine/trendValidationEngine";
 import missionsBundle from "../data/missions.ai.json";
 import signalPoolJson from "../data/cards.ai.signals.json";
 import balance from "../data/balance.json";
@@ -51,6 +57,8 @@ interface GameStore {
   stage: RunStage;
   /** menu-only stage tracker, used when no run is active */
   menuStage: RunStage;
+  /** last engine commit error surfaced to the UI; cleared on next successful commit */
+  commitError: string | null;
 
   /** action: navigate. Menu stages set menuStage; run stages patch lastRun.stage. */
   goto: (stage: RunStage) => void;
@@ -88,6 +96,11 @@ interface GameStore {
   patternRemoveSignal: (clusterId: string, signalId: string) => void;
   patternSetTitle: (clusterId: string, title: string) => void;
   patternCommit: () => void;
+
+  // Trend Validation
+  setTrendScore: (trendId: string, field: TrendScoreField, value: number) => void;
+  resetTrendScores: (trendId: string) => void;
+  commitTrendValidation: () => void;
 }
 
 const generateSeed = (): string => {
@@ -123,6 +136,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   settings: initialSave.settings,
   stage: initialStage,
   menuStage: initialMenuStage,
+  commitError: null,
 
   goto: (stage) => {
     set((state) => {
@@ -268,7 +282,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     try {
       // engine.commitSignalDraft already advances stage internally.
       const advanced = commitSignalDraft(state.lastRun);
-      set({ lastRun: advanced, stage: advanced.stage });
+      set({ lastRun: advanced, stage: advanced.stage, commitError: null });
       persist(get());
     } catch (err) {
       console.warn("commitSignalDraft failed:", err);
@@ -324,10 +338,47 @@ export const useGameStore = create<GameStore>((set, get) => ({
     try {
       // engine.commitPatternBoard advances the stage internally.
       const advanced = commitPatternBoard(state.lastRun);
-      set({ lastRun: advanced, stage: advanced.stage });
+      set({ lastRun: advanced, stage: advanced.stage, commitError: null });
       persist(get());
     } catch (err) {
       console.warn("commitPatternBoard failed:", err);
+    }
+  },
+
+  setTrendScore: (trendId, field, value) => {
+    set((state) => {
+      if (!state.lastRun) return {};
+      return {
+        lastRun: engineSetTrendScore(state.lastRun, trendId, field, value),
+        commitError: null,
+      };
+    });
+    persist(get());
+  },
+
+  resetTrendScores: (trendId) => {
+    set((state) => {
+      if (!state.lastRun) return {};
+      return {
+        lastRun: engineResetTrendScores(state.lastRun, trendId),
+        commitError: null,
+      };
+    });
+    persist(get());
+  },
+
+  commitTrendValidation: () => {
+    const state = get();
+    if (!state.lastRun) return;
+    try {
+      const advanced = engineCommitTrendValidation(state.lastRun);
+      set({ lastRun: advanced, stage: advanced.stage, commitError: null });
+      persist(get());
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Trend validation failed";
+      console.warn("commitTrendValidation failed:", err);
+      set({ commitError: message });
     }
   },
 

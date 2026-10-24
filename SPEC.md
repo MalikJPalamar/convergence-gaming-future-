@@ -19,9 +19,103 @@ Future Readiness Score and meta-progression rewards. Local-first, no backend.
 - Vitest (tests)
 - localStorage (persistence)
 
-## Current scope: Milestone 3 (Signal Draft + Pattern Board)
+## Current scope: Milestone 4 (Trend Validation)
 
-Building on the foundation merged in PR #1.
+Building on M1+M2 (PR #1) and M3 (PR #2). Both merged on `main`.
+
+### What lands
+
+1. **Trend Validation** screen + engine
+   (`engine/trendValidationEngine.ts` + `src/tests/trendValidationEngine.test.ts`).
+2. For each `TrendCandidate` produced by Pattern Board, let the player review
+   and adjust four sub-scores (each 0–3):
+   - **humanNeedScore** — how deeply the trend attaches to a human need
+   - **persistenceScore** — how likely it is to persist across cycles
+   - **convergenceScore** — how many signals converge on it
+   - **evolutionScore** — how cross-sector / cross-domain its expression is
+3. `validityScore = humanNeedScore + persistenceScore + convergenceScore + evolutionScore` (0–12).
+4. Classification bands:
+   - `0–3`: **fad**
+   - `4–6`: **weak**
+   - `7–9`: **emerging**
+   - `10–12`: **major**
+5. A trend is **validated** when `validityScore ≥ 7` (emerging or major).
+6. `commitTrendValidation(run)` requires at least one validated trend; it
+   advances the stage to `VELOCITY_MATRIX`. If no trend passes, throw a
+   player-facing error that the store surfaces as a toast / inline message.
+7. **Score editing cost**: adjusting a sub-score has no resource cost in M4
+   (per the originating roadmap, override cost is on the Velocity Matrix, not
+   here). Keep it simple.
+8. The suggested scores produced by `patternEngine.commitPatternBoard` are
+   preserved as the starting values; player edits replace them.
+
+### Type extension
+
+- Add `TrendBand` type (string literal: `"fad" | "weak" | "emerging" | "major"`).
+- Export `classifyValidity(score: number): TrendBand`.
+- `TrendCandidate` already has the four sub-scores; no shape change needed.
+
+### Engine contract — `trendValidationEngine.ts`
+
+```ts
+export const VALID_THRESHOLD = 7;
+export const MAJOR_THRESHOLD = 10;
+export const SCORE_MIN = 0;
+export const SCORE_MAX = 3;
+
+export type TrendScoreField =
+  | "humanNeedScore"
+  | "persistenceScore"
+  | "convergenceScore"
+  | "evolutionScore";
+
+export function classifyValidity(score: number): TrendBand;
+
+/** Pure. Clamps new value to [0,3], recomputes validityScore + isValidated. */
+export function setTrendScore(
+  run: RunState,
+  trendId: string,
+  field: TrendScoreField,
+  value: number,
+): RunState;
+
+/** Pure. Returns run unchanged if trend not found. */
+export function resetTrendScores(run: RunState, trendId: string): RunState;
+
+/** Throws Error("At least one validated trend required") when none pass. */
+export function commitTrendValidation(run: RunState): RunState;
+```
+
+### Store additions
+
+- `setTrendScore(trendId, field, value): void`
+- `resetTrendScores(trendId): void`
+- `commitTrendValidation(): void` (catches engine throw, surfaces `commitError`
+  on store, clears on next successful mutation)
+
+### Acceptance — this PR
+
+- Existing 83 tests still pass.
+- New: `trendValidationEngine.test.ts` with ≥ 10 cases (clamping,
+  classification bands at every boundary, validation gate, commit throws
+  without any validated trend, commit advances on success).
+- New: `trendValidation.smoke.test.tsx` with ≥ 3 cases.
+- `npm run build` clean. CI green.
+- The full UI path works: Mission Brief → Signal Draft → Pattern Board →
+  **Trend Validation** → Velocity Matrix stub.
+- No FTI references.
+
+### Out of scope (later milestones)
+
+Velocity Matrix (M5), Scenario Forge (M6), Backcast (M7), Run Outcome (M8),
+full 110-card deck (M9), polish (M10).
+
+### Note: M3 (merged in PR #2)
+
+Signal Draft + Pattern Board + GitHub Actions CI are on `main`.
+See PR history for details.
+
+### Note: M1+M2 (merged in PR #1)
 
 ### What lands
 
