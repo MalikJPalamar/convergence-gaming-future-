@@ -348,7 +348,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setTrendScore: (trendId, field, value) => {
     set((state) => {
       if (!state.lastRun) return {};
-      return { lastRun: engineSetTrendScore(state.lastRun, trendId, field, value) };
+      return {
+        lastRun: engineSetTrendScore(state.lastRun, trendId, field, value),
+        commitError: null,
+      };
     });
     persist(get());
   },
@@ -356,7 +359,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   resetTrendScores: (trendId) => {
     set((state) => {
       if (!state.lastRun) return {};
-      return { lastRun: engineResetTrendScores(state.lastRun, trendId) };
+      return {
+        lastRun: engineResetTrendScores(state.lastRun, trendId),
+        commitError: null,
+      };
     });
     persist(get());
   },

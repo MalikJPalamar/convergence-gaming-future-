@@ -173,4 +173,28 @@ describe("TrendValidation smoke", () => {
     const commit = screen.getByTestId("commit-trend") as HTMLButtonElement;
     expect(commit.disabled).toBe(true);
   });
+
+  it("adjusting a score clears a stale commitError", () => {
+    seedRunAtTrendValidation([
+      makeTrend("trend_f", "Fad Trend", { humanNeedScore: 1 }),
+    ]);
+    const { commitTrendValidation, setTrendScore, resetTrendScores } =
+      useGameStore.getState();
+
+    // Attempt to commit with no validated trend — should set commitError.
+    commitTrendValidation();
+    expect(useGameStore.getState().commitError).toMatch(/validated trend/i);
+
+    // Any score mutation should clear the stale error.
+    setTrendScore("trend_f", "humanNeedScore", 3);
+    expect(useGameStore.getState().commitError).toBeNull();
+
+    // And so should resetTrendScores.
+    commitTrendValidation(); // re-arm the error (still not validated after reset would zero it)
+    // Actually: trend_f now has humanNeed=3, others 0 → validity=3, still fad.
+    // commit should fail again:
+    expect(useGameStore.getState().commitError).toMatch(/validated trend/i);
+    resetTrendScores("trend_f");
+    expect(useGameStore.getState().commitError).toBeNull();
+  });
 });
